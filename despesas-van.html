@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Despesas Van</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #f5f4f0; min-height: 100vh; display: flex; justify-content: center; padding: 2rem 1rem; }
+  .app { width: 100%; max-width: 400px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .card { background: #fff; border-radius: 16px; padding: 1.5rem; border: 0.5px solid rgba(0,0,0,0.08); margin-bottom: 1rem; }
+  h1 { font-size: 22px; font-weight: 500; color: #1a1a18; }
+  .subtitle { font-size: 14px; color: #888780; margin-top: 4px; }
+  label { display: block; font-size: 12px; font-weight: 500; color: #888780; margin-bottom: 5px; margin-top: 16px; letter-spacing: 0.04em; text-transform: uppercase; }
+  input, select { width: 100%; padding: 10px 12px; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 8px; font-size: 15px; font-family: 'DM Sans', sans-serif; color: #1a1a18; background: #fff; appearance: none; -webkit-appearance: none; outline: none; transition: border-color 0.15s; }
+  input:focus, select:focus { border-color: #1D9E75; }
+  .select-wrap { position: relative; }
+  .select-wrap::after { content: '▾'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #888780; pointer-events: none; font-size: 13px; }
+  .btn-primary { width: 100%; margin-top: 22px; padding: 13px; background: #1D9E75; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn-primary:hover { background: #179065; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: #9FE1CB; cursor: not-allowed; }
+  .btn-secondary { width: 100%; margin-top: 10px; padding: 11px; background: transparent; color: #5F5E5A; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 10px; font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: background 0.15s; }
+  .btn-secondary:hover { background: #f5f4f0; }
+  .btn-link { background: none; border: none; font-size: 13px; color: #1D9E75; cursor: pointer; font-family: 'DM Sans', sans-serif; padding: 0; text-decoration: underline; }
+  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .tipo-btn { padding: 14px 8px; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 10px; background: #fff; cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif; color: #888780; text-align: center; transition: all 0.15s; }
+  .tipo-btn .icon { font-size: 22px; display: block; margin-bottom: 5px; }
+  .tipo-btn:hover { border-color: #1D9E75; color: #1D9E75; }
+  .tipo-btn.selected { border: 2px solid #1D9E75; background: #E1F5EE; color: #0F6E56; font-weight: 500; }
+  .parcelas-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin-top: 6px; }
+  .parcelas-sep { font-size: 13px; color: #888780; text-align: center; }
+  .error-box { background: #FCEBEB; border: 0.5px solid #F09595; border-radius: 8px; padding: 12px; margin-top: 14px; font-size: 13px; color: #791F1F; line-height: 1.5; display: none; }
+  .success-icon { width: 60px; height: 60px; border-radius: 50%; background: #E1F5EE; display: flex; align-items: center; justify-content: center; margin: 1.5rem auto 1rem; font-size: 28px; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+  .logout-btn { background: none; border: none; font-size: 12px; color: #888780; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .info-box { background: #f5f4f0; border-radius: 10px; padding: 12px 14px; margin: 1rem 0; font-size: 13px; color: #5F5E5A; line-height: 1.6; }
+  .calc-box { margin-top: 10px; padding: 10px 12px; background: #f5f4f0; border-radius: 8px; font-size: 13px; color: #5F5E5A; }
+  /* Autocomplete */
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); z-index: 100; max-height: 200px; overflow-y: auto; display: none; }
+  .autocomplete-item { padding: 10px 12px; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover, .autocomplete-item.active { background: #E1F5EE; }
+  .autocomplete-item .ac-desc { color: #1a1a18; }
+  .autocomplete-item .ac-cat { font-size: 11px; color: #888780; background: #f5f4f0; padding: 2px 6px; border-radius: 4px; }
+  /* Import */
+  .import-drop { border: 2px dashed rgba(0,0,0,0.12); border-radius: 10px; padding: 2rem; text-align: center; cursor: pointer; transition: border-color 0.15s; margin-top: 8px; }
+  .import-drop:hover { border-color: #1D9E75; }
+  .import-drop input[type=file] { display: none; }
+  .import-count { background: #E1F5EE; border-radius: 8px; padding: 10px 14px; margin-top: 12px; font-size: 13px; color: #0F6E56; display: none; }
+  .nav-tabs { display: flex; gap: 4px; margin-bottom: 1rem; }
+  .nav-tab { flex: 1; padding: 8px; background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 8px; font-size: 12px; font-family: 'DM Sans', sans-serif; color: #888780; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .nav-tab.active { background: #1D9E75; color: #fff; border-color: #1D9E75; font-weight: 500; }
+  .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-desc { font-size: 14px; color: #1a1a18; }
+  .hist-cat { font-size: 11px; color: #888780; background: #f5f4f0; padding: 2px 6px; border-radius: 4px; margin-top: 2px; display: inline-block; }
+  .hist-del { background: none; border: none; color: #E24B4A; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1; }
+  .hist-del:hover { background: #FCEBEB; }
+  .hist-search { margin-bottom: 12px; }
+  .hist-empty { text-align: center; padding: 2rem; color: #888780; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- AUTH -->
+  <div id="screen-auth" class="screen active">
+    <div class="card">
+      <h1>Despesas Van</h1>
+      <p class="subtitle">Registre gastos na planilha espelho</p>
+      <div class="info-box">Conecte sua conta Google para começar. O acesso é somente à sua planilha espelho.</div>
+      <button class="btn-primary" id="btn-auth" onclick="startAuth()">
+        <svg style="width:18px;height:18px;vertical-align:middle;margin-right:8px" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Conectar com Google
+      </button>
+      <div id="auth-error" class="error-box"></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="screen-main" class="screen">
+    <div class="header-bar">
+      <h1>Despesas Van</h1>
+      <button class="logout-btn" onclick="logout()">Sair</button>
+    </div>
+
+
+    <!-- FORM GASTO -->
+    <div id="panel-gasto" class="card">
+      <label>Tipo de gasto</label>
+      <div class="tipo-grid">
+        <button class="tipo-btn" id="tipo-mensal" onclick="selectTipo('mensal')">
+          <span class="icon">🛒</span>Despesa mensal
+        </button>
+        <button class="tipo-btn" id="tipo-parcelado" onclick="selectTipo('parcelado')">
+          <span class="icon">💳</span>Parcelado
+        </button>
+      </div>
+
+      <label for="input-data">Data da compra</label>
+      <input type="date" id="input-data">
+
+      <label for="input-pagamento">Pagamento</label>
+      <div class="select-wrap">
+        <select id="input-pagamento">
+          <option value="Cartão Virtual Tanto">Cartão Virtual Tanto</option>
+          <option value="Crédito Itaú Van">Crédito Itaú Van</option>
+        </select>
+      </div>
+
+      <label for="input-desc">O que</label>
+      <div class="autocomplete-wrap">
+        <input type="text" id="input-desc" placeholder="ex: Mambo, Rappi…" autocomplete="off" oninput="onDescInput()" onkeydown="onDescKeydown(event)">
+        <div class="autocomplete-list" id="autocomplete-list"></div>
+      </div>
+
+      <label for="input-categoria">Categoria</label>
+      <div class="select-wrap">
+        <select id="input-categoria">
+          <option value="">Selecionar...</option>
+          <option>Mercado</option>
+          <option>Compras</option>
+          <option>Pets</option>
+          <option>Restaurantes</option>
+          <option>Farmácia</option>
+          <option>Perfumaria</option>
+          <option>Serviços</option>
+          <option>Casa</option>
+          <option>Investimento</option>
+          <option>Bar</option>
+          <option>Entretenimento</option>
+        </select>
+      </div>
+
+      <!-- Parcelado -->
+      <div id="parcelas-section" style="display:none;">
+        <label for="input-valor-total">Valor total (R$)</label>
+        <input type="number" id="input-valor-total" placeholder="0,00" step="0.01" min="0" oninput="atualizarParcela()">
+        <label for="input-num-parcelas">Número de parcelas</label>
+        <input type="number" id="input-num-parcelas" placeholder="12" min="1" oninput="atualizarParcela()">
+        <div class="calc-box">Valor da parcela: <strong id="parcela-calculada">—</strong></div>
+      </div>
+
+      <!-- Mensal -->
+      <div id="valor-mensal-section">
+        <label for="input-valor">Valor (R$)</label>
+        <input type="number" id="input-valor" placeholder="0,00" step="0.01" min="0">
+      </div>
+
+      <div id="form-error" class="error-box"></div>
+      <button class="btn-primary" id="btn-submit" onclick="submitForm()">Salvar na planilha</button>
+      <div style="display:flex;gap:16px;margin-top:16px;justify-content:center;">
+        <button class="btn-link" onclick="showTab('import')">📥 Importar histórico</button>
+        <button class="btn-link" onclick="showTab('historico')">📋 Editar histórico</button>
+      </div>
+    </div>
+
+    <!-- IMPORT -->
+    <div id="panel-import" class="card" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <button class="btn-link" onclick="showTab('gasto')" style="font-size:18px;text-decoration:none;">←</button>
+        <p style="font-size:15px;font-weight:500;color:#1a1a18;">Importar histórico</p>
+      </div>
+      <div class="info-box" style="margin-top:0;">
+        Na planilha da Carolina: <strong>Arquivo → Fazer download → CSV</strong>. Depois suba o arquivo aqui. O app vai extrair os seus gastos para o autocomplete.
+      </div>
+      <div class="import-drop" onclick="document.getElementById('csv-input').click()">
+        <input type="file" id="csv-input" accept=".csv" onchange="importCSV(event)">
+        <div style="font-size:32px;margin-bottom:8px;">📂</div>
+        <p style="font-size:14px;color:#5F5E5A;">Clique para escolher o arquivo CSV</p>
+      </div>
+      <div class="import-count" id="import-count"></div>
+      <div id="import-error" class="error-box"></div>
+    </div>
+  </div>
+
+    <!-- HISTÓRICO -->
+    <div id="panel-historico" class="card" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <button class="btn-link" onclick="showTab('gasto')" style="font-size:18px;text-decoration:none;">←</button>
+        <p style="font-size:15px;font-weight:500;color:#1a1a18;">Editar histórico</p>
+      </div>
+      <input type="text" class="hist-search" id="hist-search" placeholder="Buscar..." oninput="renderHistorico()" autocomplete="off">
+      <div id="hist-list"></div>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="screen-success" class="screen">
+    <div class="card" style="text-align:center;">
+      <div class="success-icon">✓</div>
+      <h1>Salvo!</h1>
+      <p class="subtitle" id="success-desc" style="margin-top:6px;"></p>
+      <button class="btn-primary" onclick="newEntry()" style="margin-top:1.5rem;">Adicionar outro</button>
+      <button class="btn-secondary" onclick="openSheet()">Abrir planilha espelho</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://accounts.google.com/gsi/client"></script>
+<script>
+const SPREADSHEET_ID = '1C4iZzg5jILTmBU6QXV3bIIYLeKJySMEofNjTvfBUMA8';
+const CLIENT_ID = '763666145058-mjjnm3qpskdgv0fv1h7530ljskiq0mjr.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const HISTORY_KEY = 'despesas_van_historico';
+
+let selectedTipo = null;
+let accessToken = null;
+let tokenClient = null;
+let historico = []; // [{desc, categoria}]
+let acActiveIndex = -1;
+
+// ── AUTH ──────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function startAuth() {
+  const err = document.getElementById('auth-error');
+  err.style.display = 'none';
+  if (!window.google) {
+    err.textContent = 'A biblioteca do Google ainda está carregando. Aguarde e tente novamente.';
+    err.style.display = 'block';
+    return;
+  }
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) {
+        err.textContent = 'Erro na autenticação: ' + resp.error;
+        err.style.display = 'block';
+        return;
+      }
+      accessToken = resp.access_token;
+      carregarHistorico();
+      setToday();
+      show('main');
+    }
+  });
+  tokenClient.requestAccessToken();
+}
+
+function logout() { accessToken = null; show('auth'); }
+
+// ── TABS ──────────────────────────────────────────
+function showTab(tab) {
+  document.getElementById('panel-gasto').style.display = tab === 'gasto' ? 'block' : 'none';
+  document.getElementById('panel-import').style.display = tab === 'import' ? 'block' : 'none';
+  document.getElementById('panel-historico').style.display = tab === 'historico' ? 'block' : 'none';
+  if (tab === 'historico') renderHistorico();
+}
+
+// ── HISTÓRICO / AUTOCOMPLETE ──────────────────────
+function carregarHistorico() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (raw) historico = JSON.parse(raw);
+  } catch(e) { historico = []; }
+}
+
+function salvarHistorico() {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(historico));
+}
+
+function adicionarAoHistorico(desc, categoria) {
+  const exists = historico.find(h => h.desc.toLowerCase() === desc.toLowerCase());
+  if (!exists) {
+    historico.unshift({ desc, categoria });
+    if (historico.length > 300) historico = historico.slice(0, 300);
+    salvarHistorico();
+  }
+}
+
+function onDescInput() {
+  const val = document.getElementById('input-desc').value.trim();
+  const list = document.getElementById('autocomplete-list');
+  acActiveIndex = -1;
+  if (val.length < 2) { list.style.display = 'none'; return; }
+  const matches = historico.filter(h => h.desc.toLowerCase().includes(val.toLowerCase())).slice(0, 6);
+  if (matches.length === 0) { list.style.display = 'none'; return; }
+  list.innerHTML = matches.map((m, i) =>
+    `<div class="autocomplete-item" data-i="${i}" onmousedown="selectAC(${i})">
+      <span class="ac-desc">${m.desc}</span>
+      <span class="ac-cat">${m.categoria}</span>
+    </div>`
+  ).join('');
+  list.style.display = 'block';
+  list._matches = matches;
+}
+
+function onDescKeydown(e) {
+  const list = document.getElementById('autocomplete-list');
+  const items = list.querySelectorAll('.autocomplete-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acActiveIndex = Math.min(acActiveIndex + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('active', i === acActiveIndex));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acActiveIndex = Math.max(acActiveIndex - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('active', i === acActiveIndex));
+  } else if (e.key === 'Enter' && acActiveIndex >= 0) {
+    e.preventDefault();
+    selectAC(acActiveIndex);
+  } else if (e.key === 'Escape') {
+    list.style.display = 'none';
+  }
+}
+
+function selectAC(i) {
+  const list = document.getElementById('autocomplete-list');
+  const match = list._matches[i];
+  if (!match) return;
+  document.getElementById('input-desc').value = match.desc;
+  document.getElementById('input-categoria').value = match.categoria;
+  list.style.display = 'none';
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.autocomplete-wrap')) {
+    document.getElementById('autocomplete-list').style.display = 'none';
+  }
+});
+
+// ── IMPORTAR CSV ──────────────────────────────────
+function importCSV(event) {
+  const file = event.target.files[0];
+  const errEl = document.getElementById('import-error');
+  const countEl = document.getElementById('import-count');
+  errEl.style.display = 'none';
+  countEl.style.display = 'none';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const text = e.target.result;
+      const lines = text.split('\n');
+      let novos = 0;
+      for (const line of lines) {
+        const cols = parseCSVLine(line);
+        // Colunas esperadas: C=Vencimento D=Quem E=Pagamento F=O que G=Categoria H=R$
+        // No CSV exportado pelo Google Sheets: col 0=A, 1=B, 2=C(Vencimento), 3=D(Quem), 4=E(Pagamento), 5=F(O que), 6=G(Categoria)
+        const quem = (cols[3] || '').trim();
+        const oQue = (cols[5] || '').trim();
+        const categoria = (cols[6] || '').trim();
+        if (quem.toLowerCase().includes('van') && oQue && categoria && categoria !== 'Categoria') {
+          const exists = historico.find(h => h.desc.toLowerCase() === oQue.toLowerCase());
+          if (!exists) {
+            historico.push({ desc: oQue, categoria });
+            novos++;
+          }
+        }
+      }
+      salvarHistorico();
+      countEl.textContent = novos > 0
+        ? `✓ ${novos} novo${novos > 1 ? 's' : ''} item${novos > 1 ? 's' : ''} adicionado${novos > 1 ? 's' : ''} ao histórico! Total: ${historico.length} itens.`
+        : `Nenhum item novo encontrado. Histórico atual: ${historico.length} itens.`;
+      countEl.style.display = 'block';
+    } catch(err) {
+      errEl.textContent = 'Erro ao processar o CSV: ' + err.message;
+      errEl.style.display = 'block';
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+    else { current += ch; }
+  }
+  result.push(current);
+  return result;
+}
+
+// ── FORMULÁRIO ────────────────────────────────────
+function selectTipo(tipo) {
+  selectedTipo = tipo;
+  document.getElementById('tipo-mensal').classList.toggle('selected', tipo === 'mensal');
+  document.getElementById('tipo-parcelado').classList.toggle('selected', tipo === 'parcelado');
+  document.getElementById('parcelas-section').style.display = tipo === 'parcelado' ? 'block' : 'none';
+  document.getElementById('valor-mensal-section').style.display = tipo === 'parcelado' ? 'none' : 'block';
+}
+
+function setToday() {
+  const d = new Date();
+  document.getElementById('input-data').value =
+    d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function atualizarParcela() {
+  const vt = parseFloat(document.getElementById('input-valor-total').value);
+  const np = parseInt(document.getElementById('input-num-parcelas').value);
+  const el = document.getElementById('parcela-calculada');
+  if (vt > 0 && np > 0) {
+    el.textContent = (Math.round(vt / np * 100) / 100).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+  } else {
+    el.textContent = '—';
+  }
+}
+
+function getValor() {
+  if (selectedTipo === 'parcelado') {
+    const vt = parseFloat(document.getElementById('input-valor-total').value);
+    const np = parseInt(document.getElementById('input-num-parcelas').value);
+    return Math.round(vt / np * 100) / 100;
+  }
+  return parseFloat(document.getElementById('input-valor').value);
+}
+
+function buildDescricao() {
+  const desc = document.getElementById('input-desc').value.trim();
+  if (selectedTipo === 'parcelado') {
+    const total = String(document.getElementById('input-num-parcelas').value).padStart(2,'0');
+    return desc + ' [01 de ' + total + ']';
+  }
+  return desc;
+}
+
+function formatDate(isoDate) {
+  const [y, m, d] = isoDate.split('-');
+  return d + '/' + m;
+}
+
+function validateForm() {
+  if (!selectedTipo) return 'Selecione o tipo de gasto.';
+  if (!document.getElementById('input-data').value) return 'Informe a data da compra.';
+  if (!document.getElementById('input-desc').value.trim()) return 'Informe o que foi comprado.';
+  if (!document.getElementById('input-categoria').value) return 'Selecione a categoria.';
+  if (selectedTipo === 'parcelado') {
+    if (!parseFloat(document.getElementById('input-valor-total').value)) return 'Informe o valor total.';
+    if (!parseInt(document.getElementById('input-num-parcelas').value)) return 'Informe o número de parcelas.';
+  } else {
+    if (!parseFloat(document.getElementById('input-valor').value)) return 'Informe o valor.';
+  }
+  return null;
+}
+
+async function submitForm() {
+  const err = document.getElementById('form-error');
+  err.style.display = 'none';
+  const valErr = validateForm();
+  if (valErr) { err.textContent = valErr; err.style.display = 'block'; return; }
+  const btn = document.getElementById('btn-submit');
+  btn.innerHTML = '<span class="spinner"></span> Salvando...';
+  btn.disabled = true;
+  try {
+    const tab = getCurrentTabName();
+    await ensureTabExists(tab);
+    const label = selectedTipo === 'parcelado' ? 'CASINHA DESPESAS MENSAIS PARCELADAS' : 'CASINHA DESPESAS MENSAIS';
+    const row = await findInsertRow(tab, label);
+    const desc = document.getElementById('input-desc').value.trim();
+    const categoria = document.getElementById('input-categoria').value;
+    await gsheetUpdate(tab + '!C' + row + ':H' + row, [[
+      formatDate(document.getElementById('input-data').value),
+      'Compras do mês Van',
+      document.getElementById('input-pagamento').value,
+      buildDescricao(),
+      categoria,
+      getValor()
+    ]]);
+    adicionarAoHistorico(desc, categoria);
+    const val = getValor().toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    document.getElementById('success-desc').textContent = desc + ' · ' + val;
+    show('success');
+  } catch(e) {
+    err.textContent = 'Erro ao salvar: ' + e.message;
+    err.style.display = 'block';
+  }
+  btn.innerHTML = 'Salvar na planilha';
+  btn.disabled = false;
+}
+
+function newEntry() {
+  selectedTipo = null;
+  ['tipo-mensal','tipo-parcelado'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  document.getElementById('parcelas-section').style.display = 'none';
+  document.getElementById('valor-mensal-section').style.display = 'block';
+  ['input-desc','input-valor','input-valor-total','input-num-parcelas'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  document.getElementById('input-categoria').value = '';
+  document.getElementById('parcela-calculada').textContent = '—';
+  document.getElementById('form-error').style.display = 'none';
+  document.getElementById('autocomplete-list').style.display = 'none';
+  setToday();
+  show('main');
+  showTab('gasto');
+}
+
+function openSheet() {
+  window.open('https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID, '_blank');
+}
+
+// ── SHEETS API ────────────────────────────────────
+function getCurrentTabName() {
+  const now = new Date();
+  const months = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+  return months[now.getMonth()] + String(now.getFullYear()).slice(2);
+}
+
+async function ensureTabExists(tab) {
+  const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID + '?fields=sheets.properties.title',
+    { headers: { Authorization: 'Bearer ' + accessToken } });
+  if (!res.ok) throw new Error('Erro ao verificar abas');
+  const data = await res.json();
+  const titles = (data.sheets || []).map(s => s.properties.title);
+  if (titles.includes(tab)) return;
+  const addRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID + ':batchUpdate', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests: [{ addSheet: { properties: { title: tab } } }] })
+  });
+  if (!addRes.ok) throw new Error('Erro ao criar aba ' + tab);
+  await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID + '/values:batchUpdate', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      valueInputOption: 'USER_ENTERED',
+      data: [
+        { range: tab + '!C2:H2', values: [['Vencimento','Quem','Pagamento','O que','Categoria','R$']] },
+        { range: tab + '!B28:B28', values: [['CASINHA DESPESAS MENSAIS PARCELADAS']] },
+        { range: tab + '!B65:B65', values: [['CASINHA DESPESAS MENSAIS']] }
+      ]
+    })
+  });
+}
+
+async function findInsertRow(tab, blockLabel) {
+  const blockStart = blockLabel.includes('PARCELADAS') ? 28 : 65;
+  const dataRes = await gsheetGet(tab + '!D' + (blockStart+1) + ':D300');
+  const dataVals = dataRes.values || [];
+  let lastFilled = blockStart;
+  for (let i = 0; i < dataVals.length; i++) {
+    if (dataVals[i]?.[0]?.toString().trim()) lastFilled = blockStart + i + 1;
+    else break;
+  }
+  return lastFilled + 1;
+}
+
+async function gsheetGet(range) {
+  const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID + '/values/' + encodeURIComponent(range),
+    { headers: { Authorization: 'Bearer ' + accessToken } });
+  if (!res.ok) throw new Error('Erro ao ler planilha (HTTP ' + res.status + ')');
+  return res.json();
+}
+
+async function gsheetUpdate(range, values) {
+  const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED', {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ range, majorDimension: 'ROWS', values })
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Erro desconhecido'); }
+  return res.json();
+}
+
+function renderHistorico() {
+  const busca = (document.getElementById('hist-search')?.value || '').toLowerCase();
+  const lista = document.getElementById('hist-list');
+  const filtrados = historico.filter(h => !busca || h.desc.toLowerCase().includes(busca) || h.categoria.toLowerCase().includes(busca));
+  if (filtrados.length === 0) {
+    lista.innerHTML = '<div class="hist-empty">Nenhum item encontrado.</div>';
+    return;
+  }
+  lista.innerHTML = filtrados.map((h, i) => {
+    const realIndex = historico.indexOf(h);
+    return `<div class="hist-item">
+      <div>
+        <div class="hist-desc">${h.desc}</div>
+        <span class="hist-cat">${h.categoria}</span>
+      </div>
+      <button class="hist-del" onclick="deletarItem(${realIndex})" title="Remover">×</button>
+    </div>`;
+  }).join('');
+  const total = document.getElementById('hist-total');
+  if (total) total.textContent = historico.length + ' itens no histórico';
+}
+
+function deletarItem(index) {
+  historico.splice(index, 1);
+  salvarHistorico();
+  renderHistorico();
+}
+
+setToday();
+carregarHistorico();
+</script>
+</body>
+</html>
